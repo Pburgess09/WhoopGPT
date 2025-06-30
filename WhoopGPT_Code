@@ -1,0 +1,696 @@
+openapi: 3.1.0
+info:
+  title: WHOOP API
+  version: 1.0.0
+externalDocs:
+  description: WHOOP API documentation
+  url: https://developer.whoop.com
+servers:
+  - url: https://api.prod.whoop.com/developer
+    description: WHOOP production API server
+
+components:
+  securitySchemes:
+    OAuth:
+      type: oauth2
+      flows:
+        authorizationCode:'Individual Account'
+          authorizationUrl: 'Individual Account'
+          tokenUrl: 'Individual Account'
+          refreshUrl: 
+          scopes:
+            read:recovery: Read Recovery data, including score, heart rate variability, and resting heart rate.
+            read:cycles: Read cycles data, including day Strain and average heart rate during a physiological cycle.
+            read:workout: Read workout data, including activity Strain and average heart rate.
+            read:sleep: Read sleep data, including performance % and duration per sleep stage.
+            read:profile: Read profile data, including name and email.
+            read:body_measurement: Read body measurements data, including height, weight, and max heart rate.
+
+  schemas:
+    Cycle:
+      type: object
+      required: [created_at, id, score_state, start, timezone_offset, updated_at, user_id]
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        timezone_offset:
+          type: string
+        score_state:
+          type: string
+          enum: [SCORED, PENDING_SCORE, UNSCORABLE]
+        score:
+          $ref: '#/components/schemas/CycleScore'
+
+    CycleScore:
+      type: object
+      required: [average_heart_rate, kilojoule, max_heart_rate, strain]
+      properties:
+        strain:
+          type: number
+          format: float
+        kilojoule:
+          type: number
+          format: float
+        average_heart_rate:
+          type: integer
+          format: int32
+        max_heart_rate:
+          type: integer
+          format: int32
+
+    PaginatedCycleResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cycle'
+        next_token:
+          type: string
+
+    Recovery:
+      type: object
+      required: [created_at, cycle_id, score_state, sleep_id, updated_at, user_id]
+      properties:
+        cycle_id:
+          type: integer
+          format: int64
+        sleep_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        score_state:
+          type: string
+          enum: [SCORED, PENDING_SCORE, UNSCORABLE]
+        score:
+          $ref: '#/components/schemas/RecoveryScore'
+
+    RecoveryScore:
+      type: object
+      required: [hrv_rmssd_milli, recovery_score, resting_heart_rate, user_calibrating]
+      properties:
+        user_calibrating:
+          type: boolean
+        recovery_score:
+          type: number
+          format: float
+        resting_heart_rate:
+          type: number
+          format: float
+        hrv_rmssd_milli:
+          type: number
+          format: float
+        spo2_percentage:
+          type: number
+          format: float
+        skin_temp_celsius:
+          type: number
+          format: float
+
+    PaginatedRecoveryResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recovery'
+        next_token:
+          type: string
+
+    Sleep:
+      type: object
+      required: [created_at, end, id, nap, score_state, start, timezone_offset, updated_at, user_id]
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        timezone_offset:
+          type: string
+        nap:
+          type: boolean
+        score_state:
+          type: string
+          enum: [SCORED, PENDING_SCORE, UNSCORABLE]
+        score:
+          $ref: '#/components/schemas/SleepScore'
+
+    SleepScore:
+      type: object
+      required: [sleep_needed, stage_summary]
+      properties:
+        stage_summary:
+          $ref: '#/components/schemas/SleepStageSummary'
+        sleep_needed:
+          $ref: '#/components/schemas/SleepNeeded'
+        respiratory_rate:
+          type: number
+          format: float
+        sleep_performance_percentage:
+          type: number
+          format: float
+        sleep_consistency_percentage:
+          type: number
+          format: float
+        sleep_efficiency_percentage:
+          type: number
+          format: float
+
+    SleepStageSummary:
+      type: object
+      required:
+        [disturbance_count, sleep_cycle_count, total_awake_time_milli, total_in_bed_time_milli,
+         total_light_sleep_time_milli, total_no_data_time_milli, total_rem_sleep_time_milli,
+         total_slow_wave_sleep_time_milli]
+      properties:
+        total_in_bed_time_milli:
+          type: integer
+          format: int32
+        total_awake_time_milli:
+          type: integer
+          format: int32
+        total_no_data_time_milli:
+          type: integer
+          format: int32
+        total_light_sleep_time_milli:
+          type: integer
+          format: int32
+        total_slow_wave_sleep_time_milli:
+          type: integer
+          format: int32
+        total_rem_sleep_time_milli:
+          type: integer
+          format: int32
+        sleep_cycle_count:
+          type: integer
+          format: int32
+        disturbance_count:
+          type: integer
+          format: int32
+
+    SleepNeeded:
+      type: object
+      required: [baseline_milli, need_from_recent_nap_milli, need_from_recent_strain_milli, need_from_sleep_debt_milli]
+      properties:
+        baseline_milli:
+          type: integer
+          format: int64
+        need_from_sleep_debt_milli:
+          type: integer
+          format: int64
+        need_from_recent_strain_milli:
+          type: integer
+          format: int64
+        need_from_recent_nap_milli:
+          type: integer
+          format: int64
+
+    PaginatedSleepResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sleep'
+        next_token:
+          type: string
+
+    UserBodyMeasurement:
+      type: object
+      required: [height_meter, max_heart_rate, weight_kilogram]
+      properties:
+        height_meter:
+          type: number
+          format: float
+        weight_kilogram:
+          type: number
+          format: float
+        max_heart_rate:
+          type: integer
+          format: int32
+
+    UserBasicProfile:
+      type: object
+      required: [email, first_name, last_name, user_id]
+      properties:
+        user_id:
+          type: integer
+          format: int64
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+
+    Workout:
+      type: object
+      required: [created_at, end, id, score_state, sport_id, start, timezone_offset, updated_at, user_id]
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        timezone_offset:
+          type: string
+        sport_id:
+          type: integer
+          format: int32
+        score_state:
+          type: string
+          enum: [SCORED, PENDING_SCORE, UNSCORABLE]
+        score:
+          $ref: '#/components/schemas/WorkoutScore'
+
+    WorkoutScore:
+      type: object
+      required: [average_heart_rate, kilojoule, max_heart_rate, percent_recorded, strain, zone_duration]
+      properties:
+        strain:
+          type: number
+          format: float
+        average_heart_rate:
+          type: integer
+          format: int32
+        max_heart_rate:
+          type: integer
+          format: int32
+        kilojoule:
+          type: number
+          format: float
+        percent_recorded:
+          type: number
+          format: float
+        distance_meter:
+          type: number
+          format: float
+        altitude_gain_meter:
+          type: number
+          format: float
+        altitude_change_meter:
+          type: number
+          format: float
+        zone_duration:
+          $ref: '#/components/schemas/ZoneDuration'
+
+    ZoneDuration:
+      type: object
+      properties:
+        zone_zero_milli:
+          type: integer
+        zone_one_milli:
+          type: integer
+        zone_two_milli:
+          type: integer
+        zone_three_milli:
+          type: integer
+        zone_four_milli:
+          type: integer
+        zone_five_milli:
+          type: integer
+
+    PaginatedWorkoutResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workout'
+        next_token:
+          type: string
+
+
+paths:
+  /v1/cycle/{cycleId}:
+    get:
+      tags: [Cycle]
+      operationId: getCycleById
+      description: Get the cycle for the specified ID
+      parameters:
+        - name: cycleId
+          in: path
+          description: ID of the cycle to retrieve
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cycle'
+        '400':
+          description: Client error constructing the request
+        '404':
+          description: No resource found
+        '401':
+          description: Invalid authorization
+        '429':
+          description: Request rejected due to rate limiting
+        '500':
+          description: Server error occurred while making request
+      security:
+        - OAuth: [read:cycles]
+
+  /v1/cycle:
+    get:
+      tags: [Cycle]
+      operationId: getCycleCollection
+      description: Get all physiological cycles for a user, paginated.
+      parameters:
+        - name: limit
+          in: query
+          description: Limit on the number of cycles returned
+          schema:
+            type: integer
+            format: int32
+            default: 10
+            maximum: 25
+        - name: start
+          in: query
+          description: Return cycles after or during this time
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          description: Return cycles before this time
+          schema:
+            type: string
+            format: date-time
+        - name: nextToken
+          in: query
+          description: Token for next page
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCycleResponse'
+        '400':
+          description: Client error constructing the request
+        '401':
+          description: Invalid authorization
+        '429':
+          description: Request rejected due to rate limiting
+        '500':
+          description: Server error occurred while making request
+      security:
+        - OAuth: [read:cycles]
+  /v1/cycle/{cycleId}/recovery:
+    get:
+      tags: [Recovery]
+      operationId: getRecoveryForCycle
+      description: Get the recovery for a specific cycle
+      parameters:
+        - name: cycleId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID of the cycle
+      responses:
+        '200':
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recovery'
+        '400': { description: Client error }
+        '404': { description: Not found }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: [read:recovery]
+
+  /v1/recovery:
+    get:
+      tags: [Recovery]
+      operationId: getRecoveryCollection
+      description: Get all recoveries for a user
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, default: 10, maximum: 25 }
+          description: Max items
+        - name: start
+          in: query
+          schema: { type: string, format: date-time }
+          description: Start datetime
+        - name: end
+          in: query
+          schema: { type: string, format: date-time }
+          description: End datetime
+        - name: nextToken
+          in: query
+          schema: { type: string }
+          description: Next page token
+      responses:
+        '200':
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecoveryResponse'
+        '400': { description: Client error }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: [read:recovery]
+
+  /v1/activity/sleep:
+    get:
+      tags: [Sleep]
+      operationId: getSleepCollection
+      description: Get all sleeps for a user
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, default: 10, maximum: 25 }
+          description: Max results
+        - name: start
+          in: query
+          schema: { type: string, format: date-time }
+          description: Start time
+        - name: end
+          in: query
+          schema: { type: string, format: date-time }
+          description: End time
+        - name: nextToken
+          in: query
+          schema: { type: string }
+          description: Next page token
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSleepResponse'
+        '400': { description: Client error }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: [read:sleep]
+
+  /v1/activity/sleep/{sleepId}:
+    get:
+      tags: [Sleep]
+      operationId: getSleepById
+      description: Get a specific sleep by ID
+      parameters:
+        - name: sleepId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Sleep ID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sleep'
+        '400': { description: Bad request }
+        '404': { description: Not found }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: [read:sleep]
+
+  /v1/user/measurement/body:
+    get:
+      tags: [User]
+      operationId: getBodyMeasurement
+      description: Get the user's body measurements
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBodyMeasurement'
+        '400': { description: Client error }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: [read:body_measurement]
+
+  /v1/user/profile/basic:
+    get:
+      tags: [User]
+      operationId: getProfileBasic
+      description: Get the user's basic profile
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBasicProfile'
+        '400': { description: Client error }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: [read:profile]
+
+  /v1/user/access:
+    delete:
+      tags: [User]
+      operationId: revokeUserOAuthAccess
+      description: Revoke the access token granted by the user
+      responses:
+        '204': { description: Success, no content }
+        '400': { description: Client error }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: []
+
+  /v1/activity/workout:
+    get:
+      tags: [Workout]
+      operationId: getWorkoutCollection
+      description: Get all workouts for a user
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, default: 10, maximum: 25 }
+        - name: start
+          in: query
+          schema: { type: string, format: date-time }
+        - name: end
+          in: query
+          schema: { type: string, format: date-time }
+        - name: nextToken
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWorkoutResponse'
+        '400': { description: Client error }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: [read:workout]
+
+  /v1/activity/workout/{workoutId}:
+    get:
+      tags: [Workout]
+      operationId: getWorkoutById
+      description: Get a workout by ID
+      parameters:
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Workout ID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workout'
+        '400': { description: Bad request }
+        '404': { description: Not found }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Server error }
+      security:
+        - OAuth: [read:workout]
+  
