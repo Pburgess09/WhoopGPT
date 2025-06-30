@@ -16,7 +16,7 @@ Provide personalized fitness feedback in a conversational format
 
 Requirements
 
-WHOOP Developer Account: Apply for access to WHOOP's API here
+WHOOP Developer Account: Apply for access to WHOOP's API here (https://developer.whoop.com/)
 
 OAuth 2.0 Integration: For secure authentication and access to user data
 
